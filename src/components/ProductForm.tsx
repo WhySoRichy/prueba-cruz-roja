@@ -42,11 +42,11 @@ export default function ProductForm({
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = "El nombre es obligatorio";
     if (name.trim().length > 255) newErrors.name = "Máximo 255 caracteres";
-    if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0)
+    if (!price || Number.isNaN(Number.parseFloat(price)) || Number.parseFloat(price) < 0)
       newErrors.price = "Ingresa un precio válido (≥ 0)";
-    if (parseFloat(price) > 99999999.99)
+    if (Number.parseFloat(price) > 99999999.99)
       newErrors.price = "El precio excede el máximo permitido";
-    if (stock && (isNaN(parseInt(stock)) || parseInt(stock) < 0))
+    if (stock && (Number.isNaN(Number.parseInt(stock)) || Number.parseInt(stock) < 0))
       newErrors.stock = "El stock debe ser un número ≥ 0";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -57,7 +57,7 @@ export default function ProductForm({
     if (!validate()) return;
     setLoading(true);
 
-    const data = { name: name.trim(), description: description.trim() || null, price: parseFloat(price), stock: parseInt(stock) || 0 };
+    const data = { name: name.trim(), description: description.trim() || null, price: Number.parseFloat(price), stock: Number.parseInt(stock) || 0 };
 
     try {
       const url = editingProduct
@@ -98,8 +98,9 @@ export default function ProductForm({
       </h2>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Nombre *</label>
+        <label htmlFor="product-name" className="block text-sm font-medium text-gray-700">Nombre *</label>
         <input
+          id="product-name"
           type="text"
           value={name}
           onChange={(e) => { setName(e.target.value); setErrors((prev) => ({ ...prev, name: "" })); }}
@@ -109,8 +110,9 @@ export default function ProductForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Descripción</label>
+        <label htmlFor="product-description" className="block text-sm font-medium text-gray-700">Descripción</label>
         <textarea
+          id="product-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
@@ -120,8 +122,9 @@ export default function ProductForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Precio *</label>
+          <label htmlFor="product-price" className="block text-sm font-medium text-gray-700">Precio *</label>
           <input
+            id="product-price"
             type="number"
             step="0.01"
             min="0"
@@ -132,8 +135,9 @@ export default function ProductForm({
           {errors.price && <p className="text-red-600 text-xs mt-1">{errors.price}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Stock</label>
+          <label htmlFor="product-stock" className="block text-sm font-medium text-gray-700">Stock</label>
           <input
+            id="product-stock"
             type="number"
             min="0"
             value={stock}

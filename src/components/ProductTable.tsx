@@ -53,7 +53,7 @@ export default function ProductTable({
                   {product.description || "—"}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                  ${product.price.toFixed(2)}
+                  ${Number(product.price).toFixed(2)}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-900 text-right">{product.stock}</td>
                 <td className="px-4 py-3 text-center space-x-2">
@@ -85,7 +85,7 @@ export default function ProductTable({
                 <p className="font-semibold text-gray-900">{product.name}</p>
                 <p className="text-xs text-gray-400">ID #{product.id}</p>
               </div>
-              <span className="text-lg font-bold text-gray-900">${product.price.toFixed(2)}</span>
+              <span className="text-lg font-bold text-gray-900">${Number(product.price).toFixed(2)}</span>
             </div>
             {product.description && (
               <p className="text-sm text-gray-600 mb-2">{product.description}</p>

@@ -173,7 +173,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-gray-400 border-t border-gray-200 bg-white">
-        © {new Date().getFullYear()} Ricardo Hernández Vega — Cruz Roja Colombiana
+        © {new Date().getFullYear()} Cruz Roja Colombiana — Sistema de Inventario
       </footer>
     </div>
   );

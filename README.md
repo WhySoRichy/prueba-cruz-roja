@@ -120,10 +120,6 @@ npm test
 npm run test:watch
 ```
 
-## Autor
-
-**Ricardo Hernández Vega**
-
 ---
 
 Desarrollado como prueba técnica para Cruz Roja Colombiana.
