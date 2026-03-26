@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import ProductForm from "@/components/ProductForm";
 import ProductTable from "@/components/ProductTable";
+import Toast, { useToast } from "@/components/Toast";
 
 interface Product {
   id: number;
@@ -14,25 +15,42 @@ interface Product {
   updatedAt: string;
 }
 
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+const PAGE_SIZE = 10;
+
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toasts, addToast, removeToast } = useToast();
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (targetPage = 1) => {
+    setLoading(true);
     try {
-      const res = await fetch("/api/products");
+      const res = await fetch(`/api/products?page=${targetPage}&limit=${PAGE_SIZE}`);
       if (!res.ok) throw new Error("Error al cargar productos");
-      const data = await res.json();
-      setProducts(data);
+      const json = await res.json();
+      setProducts(json.data);
+      setPagination(json.pagination);
     } catch {
-      console.error("No se pudieron cargar los productos");
+      addToast("No se pudieron cargar los productos", "error");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    fetchProducts(page);
+  }, [fetchProducts, page]);
 
   const filteredProducts = useMemo(() => {
     if (!search.trim()) return products;
@@ -47,7 +65,11 @@ export default function Home() {
 
   const handleSave = () => {
     setEditingProduct(null);
-    fetchProducts();
+    addToast(
+      editingProduct ? "Producto actualizado" : "Producto creado",
+      "success"
+    );
+    fetchProducts(page);
   };
 
   const handleDelete = async (id: number) => {
@@ -55,14 +77,17 @@ export default function Home() {
     try {
       const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Error al eliminar");
-      fetchProducts();
+      addToast("Producto eliminado", "success");
+      fetchProducts(page);
     } catch {
-      alert("No se pudo eliminar el producto");
+      addToast("No se pudo eliminar el producto", "error");
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
+      <Toast toasts={toasts} onRemove={removeToast} />
+
       <main className="flex-1 py-8 px-4">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header Cruz Roja */}
@@ -84,6 +109,7 @@ export default function Home() {
           <ProductForm
             key={editingProduct?.id ?? "new"}
             onSave={handleSave}
+            onError={(msg) => addToast(msg, "error")}
             editingProduct={editingProduct}
             onCancelEdit={() => setEditingProduct(null)}
           />
@@ -102,15 +128,44 @@ export default function Home() {
             />
           </div>
 
-          <ProductTable
-            products={filteredProducts}
-            onEdit={setEditingProduct}
-            onDelete={handleDelete}
-          />
+          {loading ? (
+            <div className="bg-white p-8 rounded-lg shadow-md text-center text-gray-400 border-t-4 border-red-600">
+              Cargando productos...
+            </div>
+          ) : (
+            <ProductTable
+              products={filteredProducts}
+              onEdit={setEditingProduct}
+              onDelete={handleDelete}
+            />
+          )}
 
-          {filteredProducts.length > 0 && (
+          {/* Paginación */}
+          {pagination && pagination.totalPages > 1 && !search.trim() && (
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                ← Anterior
+              </button>
+              <span className="text-sm text-gray-600">
+                Página {pagination.page} de {pagination.totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                disabled={page >= pagination.totalPages}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Siguiente →
+              </button>
+            </div>
+          )}
+
+          {pagination && (
             <p className="text-center text-xs text-gray-400">
-              Mostrando {filteredProducts.length} de {products.length} producto{products.length !== 1 && "s"}
+              Mostrando {filteredProducts.length} de {pagination.total} producto{pagination.total !== 1 && "s"}
             </p>
           )}
         </div>

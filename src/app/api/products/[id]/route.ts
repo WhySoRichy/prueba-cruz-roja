@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { updateProductSchema } from "@/lib/validations";
+
+function parseId(raw: string): number | null {
+  const id = Number(raw);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  return id;
+}
 
 // GET /api/products/[id] - Obtener un producto por ID
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const product = await prisma.product.findUnique({
-    where: { id: Number(id) },
-  });
+  const { id: rawId } = await params;
+  const id = parseId(rawId);
+  if (!id) {
+    return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+  }
+
+  const product = await prisma.product.findUnique({ where: { id } });
 
   if (!product) {
     return NextResponse.json(
@@ -26,13 +36,30 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const body = await request.json();
-  const { name, description, price, stock } = body;
+  const { id: rawId } = await params;
+  const id = parseId(rawId);
+  if (!id) {
+    return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+  }
 
-  const existing = await prisma.product.findUnique({
-    where: { id: Number(id) },
-  });
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
+
+  const result = updateProductSchema.safeParse(body);
+
+  if (!result.success) {
+    const errors = result.error.flatten().fieldErrors;
+    return NextResponse.json(
+      { error: "Datos inválidos", details: errors },
+      { status: 400 }
+    );
+  }
+
+  const existing = await prisma.product.findUnique({ where: { id } });
 
   if (!existing) {
     return NextResponse.json(
@@ -42,13 +69,8 @@ export async function PUT(
   }
 
   const product = await prisma.product.update({
-    where: { id: Number(id) },
-    data: {
-      ...(name !== undefined && { name }),
-      ...(description !== undefined && { description }),
-      ...(price !== undefined && { price: Number(price) }),
-      ...(stock !== undefined && { stock: Number(stock) }),
-    },
+    where: { id },
+    data: result.data,
   });
 
   return NextResponse.json(product);
@@ -59,11 +81,13 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const id = parseId(rawId);
+  if (!id) {
+    return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+  }
 
-  const existing = await prisma.product.findUnique({
-    where: { id: Number(id) },
-  });
+  const existing = await prisma.product.findUnique({ where: { id } });
 
   if (!existing) {
     return NextResponse.json(
@@ -72,9 +96,7 @@ export async function DELETE(
     );
   }
 
-  await prisma.product.delete({
-    where: { id: Number(id) },
-  });
+  await prisma.product.delete({ where: { id } });
 
   return NextResponse.json({ message: "Producto eliminado" });
 }

@@ -14,12 +14,14 @@ interface Product {
 
 interface ProductFormProps {
   onSave: () => void;
+  onError?: (message: string) => void;
   editingProduct: Product | null;
   onCancelEdit: () => void;
 }
 
 export default function ProductForm({
   onSave,
+  onError,
   editingProduct,
   onCancelEdit,
 }: ProductFormProps) {
@@ -39,8 +41,11 @@ export default function ProductForm({
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = "El nombre es obligatorio";
+    if (name.trim().length > 255) newErrors.name = "Máximo 255 caracteres";
     if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0)
       newErrors.price = "Ingresa un precio válido (≥ 0)";
+    if (parseFloat(price) > 99999999.99)
+      newErrors.price = "El precio excede el máximo permitido";
     if (stock && (isNaN(parseInt(stock)) || parseInt(stock) < 0))
       newErrors.stock = "El stock debe ser un número ≥ 0";
     setErrors(newErrors);
@@ -66,12 +71,13 @@ export default function ProductForm({
 
       if (!res.ok) {
         const err = await res.json();
-        alert(err.error || "Error al guardar");
+        const message = err.error || "Error al guardar";
+        onError?.(message);
         setLoading(false);
         return;
       }
     } catch {
-      alert("Error de conexión con el servidor");
+      onError?.("Error de conexión con el servidor");
       setLoading(false);
       return;
     }
