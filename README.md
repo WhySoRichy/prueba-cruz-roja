@@ -74,7 +74,7 @@ model Product {
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/TU_USUARIO/prueba-cruz-roja.git
+git clone https://github.com/WhySoRichy/prueba-cruz-roja.git
 cd prueba-cruz-roja
 
 # 2. Instalar dependencias
